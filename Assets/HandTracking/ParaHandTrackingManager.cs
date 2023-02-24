@@ -2,27 +2,29 @@ using UnityEngine;
 using System.IO;
 using TensorFlowLite;
 
-namespace ai
+namespace parahand
 {
     public class ParaHand
     {
+        public static int JointCount = 21;
+        
+        public bool IsLeft;
         public float SideScore;
         public float Score;
         public Vector3[] Joints = new Vector3[21];
     }
     public class ParaHandLandmarkPredictor
     {
-        private const int JointCount = 21;
         private const int InputWidth = 224;
         private const int InputHeight = 224;
         public readonly ParaHand Hand;
 
         private readonly Interpreter _interpreter;
         private readonly float[,,] _inputTensor = new float[InputWidth, InputHeight, 3];
-        private readonly float[] _sideScore = new float[JointCount * 3]; // keypoint
+        private readonly float[] _sideScore = new float[ParaHand.JointCount * 3]; // keypoint
         private readonly float[] _score = new float[1]; // keypoint
         private readonly float[] _normalizedLandmark = new float[1]; // hand flag
-        private readonly float[] _worldLandmark = new float[JointCount * 3]; // keypoint
+        private readonly float[] _worldLandmark = new float[ParaHand.JointCount * 3]; // keypoint
 
         private readonly RenderTexture _resizeTexture;
         private readonly Texture2D _inputTexture;
@@ -37,7 +39,7 @@ namespace ai
             Hand = new ParaHand()
             {
                 Score = 0,
-                Joints = new Vector3[JointCount],
+                Joints = new Vector3[ParaHand.JointCount],
             };
             
             _resizeTexture = new RenderTexture(InputWidth, InputHeight, 0, RenderTextureFormat.ARGB32);
@@ -85,9 +87,12 @@ namespace ai
         {
             Hand.Score = _score[0];
             Hand.SideScore = _sideScore[0];
-            for (int i = 0; i < JointCount; i++)
+
+            Hand.IsLeft = _sideScore[0] > 100.0;
+
+            for (int i = 0; i < ParaHand.JointCount; i++)
             {
-                Hand.Joints[i] = new Vector3(_worldLandmark[i * 3], _worldLandmark[i * 3 + 2], _worldLandmark[i * 3 + 1]);
+                Hand.Joints[i] = new Vector3(_worldLandmark[i * 3], -_worldLandmark[i * 3 + 1], _worldLandmark[i * 3 + 2]);
             }
         }
         

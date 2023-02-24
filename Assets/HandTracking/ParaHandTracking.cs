@@ -1,48 +1,24 @@
 using System.Collections.Generic;
 using UnityEngine;
-using ai;
+
+namespace parahand {
 
 public class ParaHandTracking : MonoBehaviour
 {
-    public enum ParaHandBone
-    {   
-        None = -1,
-        Wrist = 0,
-        ThumbCMC,
-        ThumbMCP,
-        ThumbIP,
-        ThumbTip,
-        IndexMCP,
-        IndexPIP,
-        IndexDIP,
-        IndexTip,
-        MiddleMCP,
-        MiddlePIP,
-        MiddleDIP,
-        MiddleTip,
-        RingMCP,
-        RingPIP,
-        RingDIP,
-        RingTip,
-        PinkyMCP,
-        PinkyPIP,
-        PinkyDIP,
-        PinkyTip,
-    }
-
-    public bool CameraPreview = true;
+    public GameObject CameraPreview;
 
     private const int BoneCount = 15;
 
-    private Dictionary<ParaHandBone, int> _leftHandMap;
-    private HumanBodyBones[] _rightHandBones;
-
-    private HashSet<int> _skipBones;
+    public GameObject LeftHand;
+    public GameObject RightHand;
 
     private List<LineRenderer> lines = new List<LineRenderer>();
     private ParaHandBone[,] lineBones = new ParaHandBone[5, 5];
 
-    private Texture _webCamTexture;
+    private Renderer _renederer;
+
+    private ParaHandModel _leftHandModel;
+    private ParaHandModel _rightHandModel;
 
     private void Awake()
     {
@@ -80,21 +56,30 @@ public class ParaHandTracking : MonoBehaviour
             line.startWidth = line.endWidth = 0.002f;
             lines.Add(line);
         }
+
+        _renederer = CameraPreview.GetComponent<Renderer>();
+
+        if (LeftHand) {
+            _leftHandModel = new ParaHandModel(LeftHand, true);
+            LeftHand.SetActive(false);
+        }
+        if (RightHand) {
+            _rightHandModel = new ParaHandModel(RightHand, false);
+            RightHand.SetActive(false);
+        }
     }
 
     void Start()
     {
         ParaHandTrackingManager.Instance.OnHandDetected += OnHandDetected;
-        _webCamTexture = ParaHandTrackingManager.Instance.GetWebCamTexture();
+        if (_renederer) {
+            _renederer.material.mainTexture = ParaHandTrackingManager.Instance.GetWebCamTexture();
+        }
     }
 
     private void Update()
     {
         ParaHandTrackingManager.Instance.Predict();
-
-        if (CameraPreview && _webCamTexture) {
-            Graphics.Blit(_webCamTexture, Camera.main.targetTexture);
-        }
     }
 
     private void OnHandDetected(ParaHand hand)
@@ -103,8 +88,42 @@ public class ParaHandTracking : MonoBehaviour
         for (int i = 0; i < lines.Count; i++)
         {
             for (int j = 0; j < 5; ++j) {
-                lines[i].SetPosition(j, hand.Joints[(int)lineBones[i, j]]);
+                lines[i].SetPosition(j, hand.Joints[(int)lineBones[i, j]] + transform.position);
+            }
+        }
+
+        if (hand.Score < 0.2) {
+            if (LeftHand) {
+                LeftHand.SetActive(false);
+            }
+            if (RightHand) {
+                RightHand.SetActive(false);
+            }
+            return;
+        }
+
+        if (hand.IsLeft) {
+            if (LeftHand) {
+                LeftHand.SetActive(true);
+                _leftHandModel.Update(hand);
+            }
+            if (RightHand) {
+                RightHand.SetActive(false);
+            }
+        } else {
+            if (RightHand) {
+                RightHand.SetActive(true);
+                _rightHandModel.Update(hand);
+            }
+            if (LeftHand) {
+                LeftHand.SetActive(false);
             }
         }
     }
+    
+    private void OnVaidate() {
+        if (_renederer) _renederer.enabled = CameraPreview;
+    }
+}
+
 }
