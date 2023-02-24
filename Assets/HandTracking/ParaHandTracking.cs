@@ -83,15 +83,7 @@ public class ParaHandTracking : MonoBehaviour
     }
 
     private void OnHandDetected(ParaHand hand)
-    {        
-        // draw lines with hand joints
-        for (int i = 0; i < lines.Count; i++)
-        {
-            for (int j = 0; j < 5; ++j) {
-                lines[i].SetPosition(j, hand.Joints[(int)lineBones[i, j]] + transform.position);
-            }
-        }
-
+    {
         if (hand.Score < 0.2) {
             if (LeftHand) {
                 LeftHand.SetActive(false);
@@ -119,6 +111,15 @@ public class ParaHandTracking : MonoBehaviour
                 LeftHand.SetActive(false);
             }
         }
+
+        // draw lines with hand joints
+        for (int i = 0; i < lines.Count; i++)
+        {
+            for (int j = 0; j < 5; ++j) {
+                lines[i].SetPosition(j, hand.Joints[(int)lineBones[i, j]] + transform.position);
+            }
+        }
+
     }
     
     private void OnVaidate() {

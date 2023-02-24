@@ -9,39 +9,37 @@ public class ParahandMapping {
     public static Dictionary<ParaHandBone, Transform> Mapping(GameObject hand, bool isLeft) {
         var mapping = new Dictionary<ParaHandBone, Transform>();
 
-        var prefix = "b_";
-        prefix += isLeft ? "l_" : "r_";
+        var side = isLeft ? "l" : "r";
+        var prefix = "hands:b_";
         
-        var armature = hand.transform.Find("Armature");
+        var root = hand.transform.Find("hands:" + side + "_hand_world");
+        mapping[ParaHandBone.Wrist] = root.Find(prefix + side + "_hand");
 
-        mapping[ParaHandBone.Wrist] = armature.Find(prefix + "wrist");
+        mapping[ParaHandBone.ThumbCMC] = mapping[ParaHandBone.Wrist].Find(prefix + side + "_thumb1");
+        mapping[ParaHandBone.ThumbMCP] = mapping[ParaHandBone.ThumbCMC].Find(prefix + side + "_thumb2");
+        mapping[ParaHandBone.ThumbIP]  = mapping[ParaHandBone.ThumbMCP].Find(prefix + side + "_thumb3");
+        mapping[ParaHandBone.ThumbTip] = mapping[ParaHandBone.ThumbIP].Find(prefix + side + "_thumb_ignore");
 
-        mapping[ParaHandBone.ThumbCMC] = armature.Find(prefix + "thumb1");
-        mapping[ParaHandBone.ThumbMCP] = armature.Find(prefix + "thumb2");
-        mapping[ParaHandBone.ThumbIP] = armature.Find(prefix + "thumb3");
-        mapping[ParaHandBone.ThumbTip] = armature.Find(prefix + "thumb_null");
+        mapping[ParaHandBone.IndexMCP] = mapping[ParaHandBone.Wrist].Find(prefix + side + "_index1");
+        mapping[ParaHandBone.IndexPIP] = mapping[ParaHandBone.IndexMCP].Find(prefix + side + "_index2");
+        mapping[ParaHandBone.IndexDIP] = mapping[ParaHandBone.IndexPIP].Find(prefix + side + "_index3");
+        mapping[ParaHandBone.IndexTip] = mapping[ParaHandBone.IndexDIP].Find(prefix + side + "_index_ignore");
 
-        mapping[ParaHandBone.IndexMCP] = armature.Find(prefix + "index1");
-        mapping[ParaHandBone.IndexPIP] = armature.Find(prefix + "index2");
-        mapping[ParaHandBone.IndexDIP] = armature.Find(prefix + "index3");
-        mapping[ParaHandBone.IndexTip] = armature.Find(prefix + "index_null");
+        mapping[ParaHandBone.MiddleMCP] = mapping[ParaHandBone.Wrist].Find(prefix + side + "_middle1");
+        mapping[ParaHandBone.MiddlePIP] = mapping[ParaHandBone.MiddleMCP].Find(prefix + side + "_middle2");
+        mapping[ParaHandBone.MiddleDIP] = mapping[ParaHandBone.MiddlePIP].Find(prefix + side + "_middle3");
+        mapping[ParaHandBone.MiddleTip] = mapping[ParaHandBone.MiddleDIP].Find(prefix + side + "_middle_ignore");
 
-        mapping[ParaHandBone.MiddleMCP] = armature.Find(prefix + "middle1");
-        mapping[ParaHandBone.MiddlePIP] = armature.Find(prefix + "middle2");
-        mapping[ParaHandBone.MiddleDIP] = armature.Find(prefix + "middle3");
-        mapping[ParaHandBone.MiddleTip] = armature.Find(prefix + "middle_null");
+        mapping[ParaHandBone.RingMCP] = mapping[ParaHandBone.Wrist].Find(prefix + side + "_ring1");
+        mapping[ParaHandBone.RingPIP] = mapping[ParaHandBone.RingMCP].Find(prefix + side + "_ring2");
+        mapping[ParaHandBone.RingDIP] = mapping[ParaHandBone.RingPIP].Find(prefix + side + "_ring3");
+        mapping[ParaHandBone.RingTip] = mapping[ParaHandBone.RingDIP].Find(prefix + side + "_ring_ignore");
 
-        mapping[ParaHandBone.RingMCP] = armature.Find(prefix + "ring1");
-        mapping[ParaHandBone.RingPIP] = armature.Find(prefix + "ring2");
-        mapping[ParaHandBone.RingDIP] = armature.Find(prefix + "ring3");
-        mapping[ParaHandBone.RingTip] = armature.Find(prefix + "ring_null");
-
-        mapping[ParaHandBone.PinkyMCP] = armature.Find(prefix + "pinky1");
-        mapping[ParaHandBone.PinkyPIP] = armature.Find(prefix + "pinky2");
-        mapping[ParaHandBone.PinkyDIP] = armature.Find(prefix + "pinky3");
-        mapping[ParaHandBone.PinkyTip] = armature.Find(prefix + "pinky_null");
-
-        mapping[ParaHandBone.Wrist] = armature;
+        var pinky = mapping[ParaHandBone.Wrist].Find(prefix + side + "_pinky0");
+        mapping[ParaHandBone.PinkyMCP] = pinky.Find(prefix + side + "_pinky1");
+        mapping[ParaHandBone.PinkyPIP] = mapping[ParaHandBone.PinkyMCP].Find(prefix + side + "_pinky2");
+        mapping[ParaHandBone.PinkyDIP] = mapping[ParaHandBone.PinkyPIP].Find(prefix + side + "_pinky3");
+        mapping[ParaHandBone.PinkyTip] = mapping[ParaHandBone.PinkyDIP] .Find(prefix + side + "_pinky_ignore");
 
         return mapping;
     }
@@ -84,6 +82,13 @@ public class ParaHandModel {
         ParaHandBone.MiddleTip,
         ParaHandBone.RingTip,
         ParaHandBone.PinkyTip
+    };
+
+    private HashSet<ParaHandBone> updateBones = new HashSet<ParaHandBone> {
+        ParaHandBone.IndexMCP,
+        ParaHandBone.MiddleMCP,
+        ParaHandBone.RingMCP,
+        ParaHandBone.PinkyMCP
     };
 
     public Vector3 Direction; // middle finger forward direction
@@ -154,14 +159,12 @@ public class ParaHandModel {
         Bones[ParaHandBone.Wrist].rotation = handRotation;
 
         var handInverse = Matrix4x4.TRS(wristPostition, Quaternion.LookRotation(handXAxis, handYAxis), Vector3.one).inverse;
-        for (int i = 1; i < hand.Joints.Length; i++) {
+        for (int i = 0; i < hand.Joints.Length; i++) {
             var bone = (ParaHandBone)i;
-            if (bone == ParaHandBone.Wrist) continue;
             hand.Joints[i] = handInverse.MultiplyPoint3x4(hand.Joints[i]);
         }
 
-
-        for (int i = 1; i < hand.Joints.Length; i++) {
+        for (int i = 0; i < hand.Joints.Length; i++) {
             var bone = (ParaHandBone)i;
             if (skippedBones.Contains(bone)) continue;
 
@@ -171,6 +174,8 @@ public class ParaHandModel {
             var prevDirection = (hand.Joints[i] - hand.Joints[(int)prev]).normalized;
             var nextDirection = (hand.Joints[(int)next] - hand.Joints[i]).normalized;
             var boneDirection = Quaternion.FromToRotation(nextDirection, prevDirection).eulerAngles;
+
+            Debug.Log(boneDirection);
 
             var localEulerAngles = BoneEulerAngles[bone];
             localEulerAngles.z -= boneDirection.z;
