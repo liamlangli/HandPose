@@ -5,7 +5,6 @@ using UnityEngine;
 namespace parahand {
 
 public class ParahandMapping {
-
     public static Dictionary<ParaHandBone, Transform> Mapping(GameObject hand, bool isLeft) {
         var mapping = new Dictionary<ParaHandBone, Transform>();
 
@@ -71,9 +70,12 @@ public enum ParaHandBone
 }
 
 public class ParaHandModel {
+    public float LerpFactor = 0.7f;
 
     private Dictionary<ParaHandBone, ParaHandBone> nextBone = new Dictionary<ParaHandBone, ParaHandBone>();
     private Dictionary<ParaHandBone, ParaHandBone> prevBone = new Dictionary<ParaHandBone, ParaHandBone>();
+
+    private Dictionary<ParaHandBone, Vector3> lastResult = new Dictionary<ParaHandBone, Vector3>();
 
     private HashSet<ParaHandBone> skippedBones = new HashSet<ParaHandBone> {
         ParaHandBone.Wrist,
@@ -146,6 +148,7 @@ public class ParaHandModel {
 
         foreach (var bone in Bones) {
             BoneEulerAngles[bone.Key] = bone.Value.localEulerAngles;
+            lastResult[bone.Key] = bone.Value.localEulerAngles;
         }
     }
 
@@ -175,11 +178,11 @@ public class ParaHandModel {
             var nextDirection = (hand.Joints[(int)next] - hand.Joints[i]).normalized;
             var boneDirection = Quaternion.FromToRotation(nextDirection, prevDirection).eulerAngles;
 
-            Debug.Log(boneDirection);
-
             var localEulerAngles = BoneEulerAngles[bone];
             localEulerAngles.z -= boneDirection.z;
+            // localEulerAngles = Vector3.Lerp(lastResult[bone], localEulerAngles, LerpFactor);
             Bones[bone].localEulerAngles = localEulerAngles;
+            lastResult[bone] = localEulerAngles;
         }
     }
 

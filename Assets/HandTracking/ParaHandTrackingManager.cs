@@ -28,13 +28,13 @@ namespace parahand
 
         private readonly RenderTexture _resizeTexture;
         private readonly Texture2D _inputTexture;
-        
+
         public ParaHandLandmarkPredictor(string modelPath)
         {
             var options = new InterpreterOptions();
             options.AddGpuDelegate();
             
-            _interpreter = new Interpreter(File.ReadAllBytes(modelPath), options);
+            _interpreter = new Interpreter(FileUtil.LoadFile(modelPath), options);
 
             Hand = new ParaHand()
             {
@@ -120,7 +120,7 @@ namespace parahand
             _texture.Play();
             Debug.Log($" camera texture size {_texture.width} x {_texture.height}");
 
-            var modelPath = "Assets/StreamingAssets/tflite/hand_landmark_full.tflite";
+            var modelPath = "Assets/Resources/tflite/hand_landmark_full.tflite";
             _predictor = new ParaHandLandmarkPredictor(modelPath);
         }
         

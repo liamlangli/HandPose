@@ -6,11 +6,14 @@ namespace parahand {
 public class ParaHandTracking : MonoBehaviour
 {
     public GameObject CameraPreview;
-
-    private const int BoneCount = 15;
-
     public GameObject LeftHand;
     public GameObject RightHand;
+
+    [Range(0, 1)]
+    public float LeftHandSmoothFactor = 0.7f;
+
+    [Range(0, 1)]
+    public float RightHandSmoothFactor = 0.7f;
 
     private List<LineRenderer> lines = new List<LineRenderer>();
     private ParaHandBone[,] lineBones = new ParaHandBone[5, 5];
@@ -61,10 +64,12 @@ public class ParaHandTracking : MonoBehaviour
 
         if (LeftHand) {
             _leftHandModel = new ParaHandModel(LeftHand, true);
+            _leftHandModel.LerpFactor = LeftHandSmoothFactor;
             LeftHand.SetActive(false);
         }
         if (RightHand) {
             _rightHandModel = new ParaHandModel(RightHand, false);
+            _rightHandModel.LerpFactor = RightHandSmoothFactor;
             RightHand.SetActive(false);
         }
     }
@@ -119,11 +124,12 @@ public class ParaHandTracking : MonoBehaviour
                 lines[i].SetPosition(j, hand.Joints[(int)lineBones[i, j]] + transform.position);
             }
         }
-
     }
     
     private void OnVaidate() {
         if (_renederer) _renederer.enabled = CameraPreview;
+        if (_leftHandModel != null) _leftHandModel.LerpFactor = LeftHandSmoothFactor;
+        if (_rightHandModel != null) _rightHandModel.LerpFactor = RightHandSmoothFactor;
     }
 }
 
