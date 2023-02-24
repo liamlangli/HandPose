@@ -97,7 +97,7 @@ namespace ai
         }
     }
     
-    public class ParaHandTrackingManager : Singleton<ParaHandTrackingManager>
+    public class ParaHandTrackingManager
     {
         private readonly WebCamTexture _texture;
         private readonly ParaHandLandmarkPredictor _predictor;
@@ -136,5 +136,18 @@ namespace ai
             _texture.Stop();
             _predictor?.Dispose();
         }
+
+        
+        private static ParaHandTrackingManager instance_;
+        public static ParaHandTrackingManager Instance {
+            get {
+                if (instance_ == null) {
+                    instance_ = new ParaHandTrackingManager();
+                }
+
+                return instance_;
+            }
+        }
+
     }
 }
